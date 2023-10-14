@@ -26,13 +26,14 @@ def predict():
     if request.method == 'POST':
         file = request.files['image_file']
         save_image(file) # 들어오는 이미지 저장
-        # train_img = './img/' + file.filename
-        # temp = model(train_img)
-        # # 결과 출력
-        # temp.print()
+        train_img = './img/' + file.filename
+        temp = model(train_img)
+        
+        # 결과 출력
+        temp.print()
 
-        # # 결과 이미지 저장
-        # temp.save()  # save results (image with detections)
+        # 결과 이미지 저장
+        temp.save()  # save results (image with detections)
 
         return "sdf"
 

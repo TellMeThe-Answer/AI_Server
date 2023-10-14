@@ -31,11 +31,18 @@ def predict():
         
         # 결과 출력
         temp.print()
-
         # 결과 이미지 저장
         temp.save()  # save results (image with detections)
+        
+        bounding_boxes = temp.pred[0][:, :4]  # 예측된 바운딩 박스 정보 (x1, y1, x2, y2)
+        class_predictions = temp.pred[0][:, 5:]  # 클래스 예측 확률 (클래스에 속하는 각 객체에 대한 확률)
+        confidence_scores = temp.pred[0][:, 4]  # 바운딩 박스의 신뢰도 점수
 
-        return "sdf"
+        print(bounding_boxes)
+        print(class_predictions)
+        print(confidence_scores)
+
+        return "1"
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080, debug=True)

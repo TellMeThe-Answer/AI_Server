@@ -54,18 +54,18 @@ from utils.torch_utils import select_device, smart_inference_mode
 
 @smart_inference_mode()
 def run(
-        weights=ROOT / 'yolov5s.pt',  # model path or triton URL
+        weights=ROOT / 'yolov5l.pt',  # model path or triton URL
         source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
         imgsz=(640, 640),  # inference size (height, width)
-        conf_thres=0.25,  # confidence threshold
-        iou_thres=0.45,  # NMS IOU threshold
-        max_det=1000,  # maximum detections per image
+        conf_thres=0.25,  # 객체를 검출하기 위한 신뢰도 임계값을 설정합니다. 이 임계값 이상의 객체만 검출됩니다.
+        iou_thres=0.45,  # NMS 임계값을 설정합니다. 중복된 검출을 제거하는 데 사용됩니다.
+        max_det= 2,  # maximum detections per image
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        view_img=False,  # show results
-        save_txt=False,  # save results to *.txt
+        view_img=False,  # 결과 이미지를 표시할지 여부를 설정합니다.
+        save_txt=False,  # 결과를 텍스트 파일에 저장할지 여부를 설정합니다.
         save_csv=False,  # save results in CSV format
-        save_conf=False,  # save confidences in --save-txt labels
+        save_conf=False,  # save confidences in --save-txt labels save_txt가 활성화된 경우, 결과 텍스트 파일에 신뢰도 정보를 포함할지 여부를 설정합니다.
         save_crop=False,  # save cropped prediction boxes
         nosave=False,  # do not save images/videos
         classes=None,  # filter by class: --class 0, or --class 0 2 3
@@ -73,8 +73,8 @@ def run(
         augment=False,  # augmented inference
         visualize=False,  # visualize features
         update=False,  # update all models
-        project=ROOT / 'runs/detect',  # save results to project/name
-        name='exp',  # save results to project/name
+        project=ROOT / 'detect',  # save results to project/name
+        name='result',  # save results to project/name
         exist_ok=False,  # existing project/name ok, do not increment
         line_thickness=3,  # bounding box thickness (pixels)
         hide_labels=False,  # hide labels

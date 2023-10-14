@@ -57,10 +57,10 @@ def run(
         weights=ROOT / 'yolov5l.pt',  # model path or triton URL
         source=ROOT / 'data/images',  # file/dir/URL/glob/screen/0(webcam)
         data=ROOT / 'data/coco128.yaml',  # dataset.yaml path
-        imgsz=(640, 640),  # inference size (height, width)
+        imgsz=(416, 416),  # inference size (height, width)
         conf_thres=0.25,  # 객체를 검출하기 위한 신뢰도 임계값을 설정합니다. 이 임계값 이상의 객체만 검출됩니다.
         iou_thres=0.45,  # NMS 임계값을 설정합니다. 중복된 검출을 제거하는 데 사용됩니다.
-        max_det= 2,  # maximum detections per image
+        max_det= 1000,  # maximum detections per image
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         view_img=False,  # 결과 이미지를 표시할지 여부를 설정합니다.
         save_txt=False,  # 결과를 텍스트 파일에 저장할지 여부를 설정합니다.
@@ -239,16 +239,17 @@ def run(
         strip_optimizer(weights[0])  # update model (to fix SourceChangeWarning)
 
 
+## detect.py 실행시 고정옵션 변경
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path or triton URL')
     parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
-    parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
-    parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
-    parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
-    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
+    parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[416], help='inference size h,w')
+    parser.add_argument('--conf-thres', type=float, default=0.3, help='confidence threshold') # 신뢰도 임계값
+    parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold') # 중복된 검출을 제거, NMS 임계값
+    parser.add_argument('--max-det', type=int, default=100, help='maximum detections per image') # 최대 검출 수
+    parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu') # GPU, CPU 선택
     parser.add_argument('--view-img', action='store_true', help='show results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-csv', action='store_true', help='save results in CSV format')

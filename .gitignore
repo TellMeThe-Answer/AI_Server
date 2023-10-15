@@ -9,7 +9,7 @@
 ./label/train_img
 ./label/val_img
 
-./runs
+./runs/*
 
 
 # Byte-compiled / optimized / DLL files

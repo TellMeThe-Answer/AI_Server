@@ -14,18 +14,18 @@ model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', sourc
 
 # 모델 옵션
 
-model.max_det = 3  # 객체 탐지 수
+# 객체 탐지 수
+model.max_det = 4
+# 신뢰도 값
+model.conf = 0.01 
+# 라벨링이 여러개가 가능하도록 할지
+model.multi_label = True  
+#  IoU가 높을수록 두 bounding box가 많이 겹치고 있음을 의미하며, 
+#  IoU가 낮을수록 두 bounding box가 겹치는 정도가 적다는 것을 나타냅니다.
+#  일반적으로 NMS IoU threshold는 0.4에서 0.5 사이의 값
+model.iou = 0.45  # NMS IoU threshold  
 
-model.conf = 0.99  # 신뢰도 값
 
-    #   iou = 0.45  # NMS IoU threshold
-    #   agnostic = False  # NMS class-agnostic
-    #   multi_label = False  # NMS multiple labels per box
-    #   classes = None  # (optional list) filter by class, i.e. = [0, 15, 16] for COCO persons, cats and dogs
-    #   max_det = 1000  # maximum number of detections per image
-    #   amp = False  # Automatic Mixed Precision (AMP) inference
-
-# results = model(im, size=320)  # custom inference size
 
 # 이미지 저장
 def save_image(file):
@@ -42,15 +42,15 @@ def predict():
         file = request.files['image_file']
         save_image(file) # 들어오는 이미지 저장
         train_img = './img/' + file.filename
-        temp = model(train_img, size=416)
+        result = model(train_img, size = 640)
         
         # 결과 출력
-        temp.print()
+        result.print()
         # 결과 이미지 저장
-        temp.save()  # save results (image with detections)
+        result.save()  # save results (image with detections)
+
+        print(result.pandas().xyxy[0])
         
-
-
         return "1"
 
 if __name__ == "__main__":

@@ -38,20 +38,24 @@ def hello():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if request.method == 'POST':
-        file = request.files['image_file']
-        save_image(file) # 들어오는 이미지 저장
-        train_img = './img/' + file.filename
-        result = model(train_img, size = 640)
-        
-        # 결과 출력
-        result.print()
-        # 결과 이미지 저장
-        result.save()  # save results (image with detections)
-
-        print(result.pandas().xyxy[0])
-        
-        return "1"
+    
+    crop_type = request.form['type']
+    image = request.files['image_file']
+   
+    save_image(image) # 들어오는 이미지 저장
+    train_img = './img/' + image.filename
+    
+    result = model(train_img, size = 640)   # 모델 실행
+    ouput = result.pandas().xyxy[0] # 결과 text데이터
+    
+    result.print() # 결과 출력
+    # result.save()  # 결과 이미지 저장
+    
+    for idx in ouput.index:
+        print(ouput.loc[idx, 'name'], round(ouput.loc[idx, 'confidence'], 4))
+    print(result.pandas().xyxy[0])
+    
+    return "1"
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080, debug=True)

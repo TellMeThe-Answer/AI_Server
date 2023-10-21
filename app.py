@@ -4,6 +4,7 @@ from torchvision import models
 import os
 import sys
 import json
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -19,6 +20,8 @@ disease_name = [
     '냉해피해', '열과', '칼슘결핍', '일소피해', '축과병', '다량원소결핍 (N)', '다량원소결핍 (P)', '다량원소결핍 (K)'
 ]
 
+input_dir = './img/input/'
+output_dir = './img/output/'
 ## 모델 옵션
 
 # 객체 탐지 수
@@ -51,7 +54,7 @@ def set_model_option(model):
 
 # 이미지 저장
 def save_image(file):
-    file.save('./img/'+ file.filename)
+    file.save(input_dir+ file.filename)
 
 # 결과 code를 한글로 매치
 def match_name(code):
@@ -72,6 +75,13 @@ def run_crop_model(crop_type, train_img, img_size):
         return pepper_model(train_img, size = img_size)
     else:
         return None
+
+# 이미지 고유시간으로 이름변경 
+def change_img_name(file):
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    changed_name = (timestamp) + file.filename
+    os.rename(input_dir+ file.filename, input_dir + changed_name)
+    return changed_name    
     
     
 @app.route('/')
@@ -87,10 +97,11 @@ def predict():
     # 작물 타입
     crop_type = request.form['type']
     input_img = request.files['image_file']
-   
-    save_image(input_img) # 들어오는 이미지 저장
-    train_img = './img/' + input_img.filename
     
+    save_image(input_img) # 들어오는 이미지 저장
+    unique_name = change_img_name(input_img) # 이름 업데이트
+    
+    train_img = input_dir + unique_name
     result = run_crop_model(crop_type, train_img, 416) # 모델 실행
     
     if result == None:
@@ -99,7 +110,8 @@ def predict():
     ouput = result.pandas().xyxy[0] # 결과 text데이터
     
     result.print() # 결과 출력
-    result.save()  # 결과 이미지 저장
+    result.save(save_dir=output_dir,exist_ok=True)  # 결과 이미지 저장
+
     
     
     data['result'] = True
@@ -125,3 +137,4 @@ if __name__ == "__main__":
     
     
     app.run(host='0.0.0.0', port=8080, debug=True)
+

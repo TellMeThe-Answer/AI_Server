@@ -47,13 +47,6 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 api = Api(app, version='1.0', title='API 문서', description='Swagger 문서', doc="/api-docs")
 
 predict_api = api.namespace('predict', description='작물병해 판단')
-test_api = api.namespace('test', description='조회 API')
-
-# api swagger
-@test_api.route('/')
-class Test(Resource):
-    def get(self):
-        return 'Hello World!'
 
 # 모델 로딩
 tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
@@ -97,40 +90,29 @@ def change_img_name(file):
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     changed_name = (timestamp) + file.filename
     os.rename(input_dir+ file.filename, input_dir + changed_name)
-    return changed_name    
     
+    return changed_name  
+
+# 판단결과를 list로 리턴
+def add_result_list(result):
+    ouput = result.pandas().xyxy[0] # 결과 text데이터
+    crop_reulst =[]
+    
+    for idx in ouput.index:
+        name = match_name(ouput.loc[idx, 'name'])
+        confidence = round(ouput.loc[idx, 'confidence'], 4)
+        crop_reulst.append({"crop" : name, "confidence" : confidence})  
+        
+    return crop_reulst
+
+
 @app.route('/home')
 def hello():
     return 'Hello World!'
 
-# 결과 이미지 요청
-@app.route('/result', methods = ['GET'])
-def get_result():
-    
-    data = request.json
-    
-    try:
-        # 이미지 경로
-        image_path = output_dir + data['image_name'] 
-
-        # 이미지 파일을 클라이언트에게 반환합니다.
-        return send_file(image_path, mimetype='image/jpeg')
-
-    except FileNotFoundError:
-        response = jsonify({'error': 'Image not found', 'result' : False})
-        response.status_code = 404
-        return response
-    
-    # 이미지 파일의 경로
-    image_path = output_dir + data['image_name'] 
-
-    # 이미지 파일 전송
-    return send_file(image_path, mimetype='image/jpeg')  # mimetype을 이미지 형식에 맞게 설정합니다.
-    
-# 작물 예측
-@predict_api.route('/',methods = ['POST'])
+@predict_api.route('/')
 class Predict(Resource):
-    def post(self):
+    def post(self):  # 작물 예측
     
         data = {}
         
@@ -151,25 +133,30 @@ class Predict(Resource):
             return jsonify({"contents" : "잘못된 작물입니다.", "result" : False})
         
         # 모델 결과 이미지
-        result.print() # 결과 출력
+        result.print() 
         result.save(save_dir=output_dir,exist_ok=True)  
         
-        # 리스트에 결과값 저장 후 리턴
-        data['result'] = True
-        ouput = result.pandas().xyxy[0] # 결과 text데이터
-        crop_reulst =[]
-        for idx in ouput.index:
-
-            name = match_name(ouput.loc[idx, 'name'])
-            confidence = round(ouput.loc[idx, 'confidence'], 4)
-            crop_reulst.append({"crop" : name, "confidence" : confidence})
+        # 결과값 리스트로 저장
+        crop_reulst = add_result_list(result)
         
+        data['result'] = True
         data['contents'] = crop_reulst
         data['image_path'] = unique_name # 결과에 이미지 url
+        
         return jsonify(data)
+    
+    # 결과 이미지 요청
+    def get(self):
+        data = request.json
+        
+        try:
+            image_path = output_dir + data['image_name'] 
+            return send_file(image_path, mimetype='image/jpeg')
 
-        # return jsonify(data=data, image=send_file('img/output/' + unique_name,  mimetype='image/jpeg'))
-        # return (send_file('img/output/' + unique_name,  mimetype='image/jpeg'))
+        except FileNotFoundError:
+            response = jsonify({'error': 'Image not found', 'result' : False})
+            response.status_code = 404
+            return response
     
 if __name__ == "__main__":
     

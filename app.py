@@ -88,6 +88,30 @@ def change_img_name(file):
 def hello():
     return 'Hello World!'
 
+# 결과 이미지 요청
+@app.route('/result', methods = ['GET'])
+def get_result():
+    
+    data = request.json
+    
+    try:
+        # 이미지 경로
+        image_path = output_dir + data['image_name'] 
+
+        # 이미지 파일을 클라이언트에게 반환합니다.
+        return send_file(image_path, mimetype='image/jpeg')
+
+    except FileNotFoundError:
+        response = jsonify({'error': 'Image not found', 'result' : False})
+        response.status_code = 404
+        return response
+    
+    # 이미지 파일의 경로를 지정합니다.
+    image_path = output_dir + data['image_name'] 
+
+    # 이미지 파일을 클라이언트에게 반환합니다.
+    return send_file(image_path, mimetype='image/jpeg')  # mimetype을 이미지 형식에 맞게 설정합니다.
+    
 # 작물 예측
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -126,8 +150,9 @@ def predict():
         crop_reulst.append({"crop" : name, "confidence" : confidence})
     
     data['contents'] = crop_reulst
-    data['image_path'] = 'img/output/' + unique_name
+    data['image_path'] = unique_name # 결과에 이미지 url
     return jsonify(data)
+
     # return jsonify(data=data, image=send_file('img/output/' + unique_name,  mimetype='image/jpeg'))
     # return (send_file('img/output/' + unique_name,  mimetype='image/jpeg'))
     

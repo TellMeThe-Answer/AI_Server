@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 import torch
 from torchvision import models
 import os
@@ -98,24 +98,26 @@ def predict():
     crop_type = request.form['type']
     input_img = request.files['image_file']
     
-    save_image(input_img) # 들어오는 이미지 저장
-    unique_name = change_img_name(input_img) # 이름 업데이트
+    # 이미지 저장, 이름 변경
+    save_image(input_img) 
+    unique_name = change_img_name(input_img)
     
+    # 모델 실행
     train_img = input_dir + unique_name
-    result = run_crop_model(crop_type, train_img, 416) # 모델 실행
+    result = run_crop_model(crop_type, train_img, 416)
     
+    # 작물 입력 오류
     if result == None:
         return jsonify({"contents" : "잘못된 작물입니다.", "result" : False})
     
     ouput = result.pandas().xyxy[0] # 결과 text데이터
     
+    # 모델 결과 이미지
     result.print() # 결과 출력
-    result.save(save_dir=output_dir,exist_ok=True)  # 결과 이미지 저장
-
+    result.save(save_dir=output_dir,exist_ok=True)  
     
-    
+    # 리스트에 결과값 저장 후 리턴
     data['result'] = True
-    
     crop_reulst =[]
     for idx in ouput.index:
 
@@ -124,9 +126,11 @@ def predict():
         crop_reulst.append({"crop" : name, "confidence" : confidence})
     
     data['contents'] = crop_reulst
-    
+    data['image_path'] = 'img/output/' + unique_name
     return jsonify(data)
-
+    # return jsonify(data=data, image=send_file('img/output/' + unique_name,  mimetype='image/jpeg'))
+    # return (send_file('img/output/' + unique_name,  mimetype='image/jpeg'))
+    
 if __name__ == "__main__":
     
     # 모델 옵션 적용

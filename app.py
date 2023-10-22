@@ -5,6 +5,8 @@ import os
 import sys
 import json
 from datetime import datetime
+from flask_restx import Api, Resource, reqparse
+from flask_cors import CORS
 
 app = Flask(__name__)
 
@@ -38,6 +40,20 @@ output_dir = './img/output/'
 
 
 sys.path.insert(0, './model')
+
+CORS(app, resources={r"/*": {"origins": "*"}})
+
+# api swagger
+api = Api(app, version='1.0', title='API 문서', description='Swagger 문서', doc="/api-docs")
+
+predict_api = api.namespace('predict', description='작물병해 판단')
+test_api = api.namespace('test', description='조회 API')
+
+# api swagger
+@test_api.route('/')
+class Test(Resource):
+    def get(self):
+        return 'Hello World!'
 
 # 모델 로딩
 tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
@@ -83,8 +99,7 @@ def change_img_name(file):
     os.rename(input_dir+ file.filename, input_dir + changed_name)
     return changed_name    
     
-    
-@app.route('/')
+@app.route('/home')
 def hello():
     return 'Hello World!'
 
@@ -106,55 +121,55 @@ def get_result():
         response.status_code = 404
         return response
     
-    # 이미지 파일의 경로를 지정합니다.
+    # 이미지 파일의 경로
     image_path = output_dir + data['image_name'] 
 
-    # 이미지 파일을 클라이언트에게 반환합니다.
+    # 이미지 파일 전송
     return send_file(image_path, mimetype='image/jpeg')  # mimetype을 이미지 형식에 맞게 설정합니다.
     
 # 작물 예측
-@app.route('/predict', methods=['POST'])
-def predict():
-   
-    data = {}
-     
-    # 작물 타입
-    crop_type = request.form['type']
-    input_img = request.files['image_file']
+@predict_api.route('/',methods = ['POST'])
+class Predict(Resource):
+    def post(self):
     
-    # 이미지 저장, 이름 변경
-    save_image(input_img) 
-    unique_name = change_img_name(input_img)
-    
-    # 모델 실행
-    train_img = input_dir + unique_name
-    result = run_crop_model(crop_type, train_img, 416)
-    
-    # 작물 입력 오류
-    if result == None:
-        return jsonify({"contents" : "잘못된 작물입니다.", "result" : False})
-    
-    ouput = result.pandas().xyxy[0] # 결과 text데이터
-    
-    # 모델 결과 이미지
-    result.print() # 결과 출력
-    result.save(save_dir=output_dir,exist_ok=True)  
-    
-    # 리스트에 결과값 저장 후 리턴
-    data['result'] = True
-    crop_reulst =[]
-    for idx in ouput.index:
+        data = {}
+        
+        # 작물 타입
+        crop_type = request.form['type']
+        input_img = request.files['image_file']
+        
+        # 이미지 저장, 이름 변경
+        save_image(input_img) 
+        unique_name = change_img_name(input_img)
+        
+        # 모델 실행
+        train_img = input_dir + unique_name
+        result = run_crop_model(crop_type, train_img, 416)
+        
+        # 작물 입력 오류
+        if result == None:
+            return jsonify({"contents" : "잘못된 작물입니다.", "result" : False})
+        
+        # 모델 결과 이미지
+        result.print() # 결과 출력
+        result.save(save_dir=output_dir,exist_ok=True)  
+        
+        # 리스트에 결과값 저장 후 리턴
+        data['result'] = True
+        ouput = result.pandas().xyxy[0] # 결과 text데이터
+        crop_reulst =[]
+        for idx in ouput.index:
 
-        name = match_name(ouput.loc[idx, 'name'])
-        confidence = round(ouput.loc[idx, 'confidence'], 4)
-        crop_reulst.append({"crop" : name, "confidence" : confidence})
-    
-    data['contents'] = crop_reulst
-    data['image_path'] = unique_name # 결과에 이미지 url
-    return jsonify(data)
+            name = match_name(ouput.loc[idx, 'name'])
+            confidence = round(ouput.loc[idx, 'confidence'], 4)
+            crop_reulst.append({"crop" : name, "confidence" : confidence})
+        
+        data['contents'] = crop_reulst
+        data['image_path'] = unique_name # 결과에 이미지 url
+        return jsonify(data)
 
-    # return jsonify(data=data, image=send_file('img/output/' + unique_name,  mimetype='image/jpeg'))
-    # return (send_file('img/output/' + unique_name,  mimetype='image/jpeg'))
+        # return jsonify(data=data, image=send_file('img/output/' + unique_name,  mimetype='image/jpeg'))
+        # return (send_file('img/output/' + unique_name,  mimetype='image/jpeg'))
     
 if __name__ == "__main__":
     

@@ -24,6 +24,9 @@ disease_name = [
 
 input_dir = './img/input/'
 output_dir = './img/output/'
+
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
+
 ## 모델 옵션
 
 # 객체 탐지 수
@@ -105,6 +108,20 @@ def add_result_list(result):
         
     return crop_reulst
 
+# 유요한 작물타입인지 확인
+def is_valid_crop(crop_type):
+    if crop_type == 'tomato' or crop_type == 'strawberry' or crop_type == 'cucumber' or crop_type == 'pepper':
+        return True
+    else:
+        return False
+
+# 허용된 파일 형식인지 확인
+def is_allowed_file(input_img):
+    return '.' in input_img and input_img.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# 업로드된 파일이 정상인지 확인
+def is_exist_file(input_img):
+    return (str(input_img) == "<FileStorage: '' (None)>" or input_img.filename == '')
 
 @app.route('/home')
 def hello():
@@ -116,10 +133,25 @@ class Predict(Resource):
     
         data = {}
         
-        # 작물 타입
-        crop_type = request.form['type']
+        crop_type = request.form.get('type')
         input_img = request.files['image_file']
         
+        # 작물 타입
+        if not crop_type:
+            return jsonify({"contents": "작물정보가 업로드 되지 않았습니다.", "result": False})
+        
+        # 작물 입력 오류
+        if not is_valid_crop(crop_type):
+            return jsonify({"contents" : "tomato, strawberry, cucumber, pepper 중 하나를 입력해주세요.", "result" : False})
+        
+        # 파일이 제대로 업로드 되었는지 확인
+        if is_exist_file(input_img):
+            return jsonify({"contents" : "이미지가 업로드 되지 않았습니다.", "result" : False})
+
+        # 파일 형식이 jpeg, jpg, png가 맞는지
+        if not is_allowed_file(input_img.filename):
+            return jsonify({"contents" : "파일형식을 jpeg, jpg, png형식의 파일을 업로드해주세요.", "result" : False})
+ 
         # 이미지 저장, 이름 변경
         save_image(input_img) 
         unique_name = change_img_name(input_img)
@@ -127,10 +159,6 @@ class Predict(Resource):
         # 모델 실행
         train_img = input_dir + unique_name
         result = run_crop_model(crop_type, train_img, 416)
-        
-        # 작물 입력 오류
-        if result == None:
-            return jsonify({"contents" : "잘못된 작물입니다.", "result" : False})
         
         # 모델 결과 이미지
         result.print() 

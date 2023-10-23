@@ -5,7 +5,7 @@ import os
 import sys
 import json
 from datetime import datetime
-from flask_restx import Api, Resource, reqparse
+from flask_restx import Api, Resource,  Namespace, fields
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -34,7 +34,18 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 # api swagger
 api = Api(app, version='1.0', title='API 문서', description='Capstone Swagger 문서', doc="/api-docs")
-predict_api = api.namespace('predict', description='작물병해 판단')
+
+predict_api = api.namespace(name='predict', description='작물병해 판단')
+
+predict_requirement = predict_api.model('predict 요청', {
+    'image_file': fields.Raw(description='jpeg, jpg, png형식의 이미지 파일', required=True, example="test.jpeg"),
+    'crop_type' : fields.String(description='작물의 이름', required=True, example="tomato")
+})
+
+predict_return = predict_api.model('predict 요청', {
+    'image_file': fields.Raw(description='jpeg, jpg, png형식의 이미지 파일', required=True, example="test.jpeg"),
+    'crop_type' : fields.String(description='작물의 이름', required=True, example="tomato")
+})
 
 # 모델 로딩
 tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
@@ -115,9 +126,11 @@ def hello():
 @predict_api.route('/')
 class Predict(Resource):
     
-    @predict_api.doc(params={'image_file': {'type': 'file', 'description': 'jpeg, jpg, png형식의 이미지 파일'}, 'crop_type' : {'type': 'string', 'description': '작물의 이름'}})
-    @predict_api.doc(responses={200: 'Success'})
+    # @predict_api.doc(params={'image_file': {'type': 'file', 'description': 'jpeg, jpg, png형식의 이미지 파일'}, 'crop_type' : {'type': 'string', 'description': '작물의 이름'}})
+    # @predict_api.doc(responses={200: 'Success'})
     @predict_api.doc(responses={500: 'Failed'})
+    @predict_api.expect(predict_fields)
+    @predict_api.response(200, 'Success', predict_fields)
     def post(self):  # 작물 예측
         """작물이름과 작물 이미지를 받아 작물의 병해를 판단합니다."""
         data = {}

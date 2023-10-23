@@ -27,20 +27,6 @@ output_dir = './img/output/'
 
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
 
-## 모델 옵션
-
-# 객체 탐지 수
-# model.max_det = 4
-
-# 신뢰도 값
-# model.conf = 0.01 
-
-# 라벨링이 여러개가 가능하도록 할지
-# model.multi_label = True  
-
-#  IoU가 높을수록 두 bounding box가 많이 겹치고 있음을 의미하며, IoU가 낮을수록 두 bounding box가 겹치는 정도가 적다는 것을 나타냅니다. 0.4 ~ 0.5 값
-# model.iou = 0.45 
-
 
 sys.path.insert(0, './model')
 
@@ -48,7 +34,6 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 # api swagger
 api = Api(app, version='1.0', title='API 문서', description='Swagger 문서', doc="/api-docs")
-
 predict_api = api.namespace('predict', description='작물병해 판단')
 
 # 모델 로딩
@@ -59,10 +44,10 @@ pepper_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt'
 
 # 모델 옵션
 def set_model_option(model):
-    model.max_det = 4
-    model.conf = 0.01 
-    model.multi_label = True  
-    model.iou = 0.45 
+    model.max_det = 4  # 객체 탐지 수
+    model.conf = 0.01  # 신뢰도 값
+    model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
+    model.iou = 0.45  # 0.4 ~ 0.5 값
 
 # 이미지 저장
 def save_image(file):
@@ -150,7 +135,7 @@ class Predict(Resource):
 
         # 파일 형식이 jpeg, jpg, png가 맞는지
         if not is_allowed_file(input_img.filename):
-            return jsonify({"contents" : "파일형식을 jpeg, jpg, png형식의 파일을 업로드해주세요.", "result" : False})
+            return jsonify({"contents" : "jpeg, jpg, png형식의 파일을 업로드해주세요.", "result" : False})
  
         # 이미지 저장, 이름 변경
         save_image(input_img) 

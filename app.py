@@ -33,7 +33,7 @@ sys.path.insert(0, './model')
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # api swagger
-api = Api(app, version='1.0', title='API 문서', description='Swagger 문서', doc="/api-docs")
+api = Api(app, version='1.0', title='API 문서', description='Capstone Swagger 문서', doc="/api-docs")
 predict_api = api.namespace('predict', description='작물병해 판단')
 
 # 모델 로딩
@@ -114,11 +114,15 @@ def hello():
 
 @predict_api.route('/')
 class Predict(Resource):
-    def post(self):  # 작물 예측
     
+    @predict_api.doc(params={'image_file': {'type': 'file', 'description': 'jpeg, jpg, png형식의 이미지 파일'}, 'crop_type' : {'type': 'string', 'description': '작물의 이름'}})
+    @predict_api.doc(responses={200: 'Success'})
+    @predict_api.doc(responses={500: 'Failed'})
+    def post(self):  # 작물 예측
+        """작물이름과 작물 이미지를 받아 작물의 병해를 판단합니다."""
         data = {}
         
-        crop_type = request.form.get('type')
+        crop_type = request.form.get('crop_type')
         input_img = request.files['image_file']
         
         # 작물 타입
@@ -159,7 +163,11 @@ class Predict(Resource):
         return jsonify(data)
     
     # 결과 이미지 요청
+    @predict_api.doc(params={'image_name': '판단 후 리턴받은 이미지의 이름'})
+    @predict_api.doc(responses={200: 'Success'})
+    @predict_api.doc(responses={500: 'Failed'})
     def get(self):
+        """판단 결과사진을 리턴해줍니다."""
         data = request.json
         
         try:

@@ -42,9 +42,8 @@ predict_requirement = predict_api.model('predict 요청', {
     'crop_type' : fields.String(description='작물의 이름', required=True, example="tomato")
 })
 
-predict_return = predict_api.model('predict 요청', {
-    'image_file': fields.Raw(description='jpeg, jpg, png형식의 이미지 파일', required=True, example="test.jpeg"),
-    'crop_type' : fields.String(description='작물의 이름', required=True, example="tomato")
+predict_return = predict_api.model('predict 결과', {
+    'image_file': fields.Raw(description='jpeg 형식의 이미지 파일', required=True, example="20231023160713test.jpeg"),
 })
 
 # 모델 로딩
@@ -126,11 +125,9 @@ def hello():
 @predict_api.route('/')
 class Predict(Resource):
     
-    # @predict_api.doc(params={'image_file': {'type': 'file', 'description': 'jpeg, jpg, png형식의 이미지 파일'}, 'crop_type' : {'type': 'string', 'description': '작물의 이름'}})
-    # @predict_api.doc(responses={200: 'Success'})
     @predict_api.doc(responses={500: 'Failed'})
-    @predict_api.expect(predict_fields)
-    @predict_api.response(200, 'Success', predict_fields)
+    @predict_api.expect(predict_requirement)
+    @predict_api.response(200, 'Success', predict_requirement)
     def post(self):  # 작물 예측
         """작물이름과 작물 이미지를 받아 작물의 병해를 판단합니다."""
         data = {}
@@ -177,8 +174,10 @@ class Predict(Resource):
     
     # 결과 이미지 요청
     @predict_api.doc(params={'image_name': '판단 후 리턴받은 이미지의 이름'})
-    @predict_api.doc(responses={200: 'Success'})
+        
     @predict_api.doc(responses={500: 'Failed'})
+    @predict_api.expect(predict_return)
+    @predict_api.response(200, 'Success', predict_return)
     def get(self):
         """판단 결과사진을 리턴해줍니다."""
         data = request.json

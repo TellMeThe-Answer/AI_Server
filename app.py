@@ -99,7 +99,7 @@ def add_result_list(result):
     for idx in ouput.index:
         name = match_name(ouput.loc[idx, 'name'])
         confidence = round(ouput.loc[idx, 'confidence'], 4)
-        crop_reulst.append({"crop" : name, "confidence" : confidence})  
+        crop_reulst.append({"disease" : name, "percentage" : confidence})  
         
     return crop_reulst
 
@@ -133,6 +133,7 @@ class Predict(Resource):
         data = {}
         
         crop_type = request.form.get('crop_type')
+        print(request.files)
         input_img = request.files['image_file']
         
         # 작물 타입
@@ -152,7 +153,7 @@ class Predict(Resource):
             return jsonify({"contents" : "jpeg, jpg, png형식의 파일을 업로드해주세요.", "result" : False})
  
         # 이미지 저장, 이름 변경
-        save_image(input_img) 
+        save_image(input_img)
         unique_name = change_img_name(input_img)
         
         # 모델 실행
@@ -181,10 +182,21 @@ class Predict(Resource):
     def get(self):
         """판단 결과사진을 리턴해줍니다."""
         data = request.json
-        
+
         try:
             image_path = output_dir + data['image_name'] 
-            return send_file(image_path, mimetype='image/jpeg')
+            
+            # 파일 확장자에 따라 MIME 타입 설정
+            if image_path.endswith('.jpeg'):
+                mimetype = 'image/jpeg'
+            elif image_path.endswith('.png'):
+                mimetype = 'image/png'
+            elif image_path.endswith('.jpg'):
+                    mimetype = 'image/jpg'
+            else:
+                return 'Unsupported file format', 400
+            
+            return send_file(image_path, mimetype=mimetype)
 
         except FileNotFoundError:
             response = jsonify({'error': 'Image not found', 'result' : False})

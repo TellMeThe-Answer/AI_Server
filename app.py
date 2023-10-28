@@ -133,7 +133,6 @@ class Predict(Resource):
         data = {}
         
         crop_type = request.form.get('crop_type')
-        print(request.files)
         input_img = request.files['image_file']
         
         # 작물 타입
@@ -169,7 +168,9 @@ class Predict(Resource):
         
         data['result'] = True
         data['contents'] = crop_reulst
-        data['image_path'] = unique_name # 결과에 이미지 url
+        
+        # 문자열에서 마지막 점 이후의 모든 문자를 .jpeg로 대체
+        data['image_path'] = new_string = unique_name.rsplit('.', 1)[0] + ".jpeg"
         
         return jsonify(data)
     

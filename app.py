@@ -201,18 +201,7 @@ class Predict(Resource):
 
         try:
             image_path = output_dir + data['image_name'] 
-            
-            # 파일 확장자에 따라 MIME 타입 설정
-            if image_path.endswith('.jpeg'):
-                mimetype = 'image/jpeg'
-            elif image_path.endswith('.png'):
-                mimetype = 'image/png'
-            elif image_path.endswith('.jpg'):
-                    mimetype = 'image/jpg'
-            else:
-                return 'Unsupported file format', 400
-            
-            return send_file(image_path, mimetype=mimetype)
+            return send_file(image_path, mimetype='image/jpeg')
 
         except FileNotFoundError:
             response = jsonify({'error': 'Image not found', 'result' : False})

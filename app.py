@@ -39,24 +39,40 @@ api = Api(app, version='1.0', title='API 문서', description='Capstone Swagger 
 
 predict_api = api.namespace(name='/', description='작물병해 판단')
 
-predict_requirement = predict_api.model('predict 요청', {
+predict_request = predict_api.model('Predict 요청', {
     'image_file': fields.Raw(description='jpeg, jpg, png형식의 이미지 파일', required=True, example="test.jpeg"),
     'crop_type' : fields.String(description='작물의 이름', required=True, example="tomato")
 })
 
-predict_response = predict_api.model('predict 응답', {
-    'contents': fields.List(fields.Nested({
-        'disease': fields.String(description='병해 이름', required=True, example="파프리카흰가루병"),
-        'percentage': fields.Float(description='확률', required=True, example=0.7027)
-    }), description='병해 및 확률 리스트'),
+contents_fields = api.model('Predict Contents', {
+    'disease': fields.String(description='병해 이름', example="파프리카흰가루병"),
+    'percentage': fields.Float(description='확률', example=0.7027)
+})
+
+predict_response = predict_api.model('Predict 응답', {
+    'contents': fields.List(fields.Nested(contents_fields), description='병해 및 확률 리스트'),
     'image_path': fields.String(description='이미지 경로', required=True, example="20231029151432123test3.jpeg"),
     'result': fields.Boolean(description='결과', required=True, example=True)
 })
 
-predict_return = predict_api.model('predict 결과', {
-    'image_file': fields.Raw(description='jpeg 형식의 이미지 파일', required=True, example="20231023160713test.jpeg"),
-    'contents' : fields.String(description='')
+predict_fail_response = predict_api.model('Predict 실패 응답', {
+   'error': fields.String(description='에러 문자', example="tomato, strawberry, cucumber, pepper 중 하나를 입력해주세요."),
+   'result' : fields.Boolean(description='성공 여부', example="false")
 })
+
+image_request = predict_api.model('Predict Image 요청', {
+    'image_name' : fields.String(description='결과 이미지 이름', example="20231027test.jpeg", required=True)
+})
+
+image_response = predict_api.model('Predict Image 응답', {
+   'image_file': fields.Raw(description='jpeg 형식의 이미지 파일', required=True, example="20231023160713test.jpeg"),
+})
+
+image_fail_response = predict_api.model('Predict Image 실패 응답', {
+   'error': fields.String(description='에러 문자', example="Image not found"),
+   'result' : fields.Boolean(description='성공 여부', example="false")
+})
+
 
 # 모델 로딩
 tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
@@ -140,9 +156,10 @@ def hello():
 @predict_api.route('/predict')
 class Predict(Resource):
     
-    @predict_api.doc(responses={500: 'Failed'})
-    @predict_api.expect(predict_requirement)
-    @predict_api.response(200, 'Success', predict_requirement)
+    @predict_api.doc(params={'image_file': '판단하고자 하는 이미지', 'crop_type' : '작물의 영어이름'})
+    @predict_api.expect(predict_request)
+    @predict_api.response(200, 'Success', predict_response)
+    @predict_api.response(500, 'Fail', predict_fail_response)
     def post(self):  # 작물 예측
         """작물이름과 작물 이미지를 받아 작물의 병해를 판단합니다."""
         data = {}
@@ -152,19 +169,19 @@ class Predict(Resource):
         
         # 작물 타입
         if not crop_type:
-            return jsonify({"contents": "작물정보가 업로드 되지 않았습니다.", "result": False})
+            return jsonify({"error": "작물정보가 업로드 되지 않았습니다.", "result": False})
         
         # 작물 입력 오류
         if not is_valid_crop(crop_type):
-            return jsonify({"contents" : "tomato, strawberry, cucumber, pepper 중 하나를 입력해주세요.", "result" : False})
+            return jsonify({"error" : "tomato, strawberry, cucumber, pepper 중 하나를 입력해주세요.", "result" : False})
         
         # 파일이 제대로 업로드 되었는지 확인
         if is_exist_file(input_img):
-            return jsonify({"contents" : "이미지가 업로드 되지 않았습니다.", "result" : False})
+            return jsonify({"error" : "이미지가 업로드 되지 않았습니다.", "result" : False})
 
         # 파일 형식이 jpeg, jpg, png가 맞는지
         if not is_allowed_file(input_img.filename):
-            return jsonify({"contents" : "jpeg, jpg, png형식의 파일을 업로드해주세요.", "result" : False})
+            return jsonify({"error" : "jpeg, jpg, png형식의 파일을 업로드해주세요.", "result" : False})
  
         # 이미지 저장, 이름 변경
         save_image(input_img)
@@ -191,10 +208,9 @@ class Predict(Resource):
     
     # 결과 이미지 요청
     @predict_api.doc(params={'image_name': '판단 후 리턴받은 이미지의 이름'})
-        
-    @predict_api.doc(responses={500: 'Failed'})
-    @predict_api.expect(predict_return)
-    @predict_api.response(200, 'Success', predict_return)
+    @predict_api.expect(image_request)
+    @predict_api.response(200, 'Success', image_response)
+    @predict_api.response(500, 'Fail', image_fail_response)
     def get(self):
         """판단 결과사진을 리턴해줍니다."""
         data = request.json

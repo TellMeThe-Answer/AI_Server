@@ -9,6 +9,8 @@
 ./label/train_img
 ./label/val_img
 
+./img/input/*
+./img/output/*
 runs/
 
 

@@ -10,6 +10,9 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
+# 업로드 파일 최대 크기 설정 (단위: 바이트)
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 예: 16MB
+
 disease_code = [
     '00', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9',
     'a10', 'a11', 'a12', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7',
@@ -27,7 +30,6 @@ output_dir = './img/output/'
 
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
 
-
 sys.path.insert(0, './model')
 
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -35,15 +37,25 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 # api swagger
 api = Api(app, version='1.0', title='API 문서', description='Capstone Swagger 문서', doc="/api-docs")
 
-predict_api = api.namespace(name='predict', description='작물병해 판단')
+predict_api = api.namespace(name='/', description='작물병해 판단')
 
 predict_requirement = predict_api.model('predict 요청', {
     'image_file': fields.Raw(description='jpeg, jpg, png형식의 이미지 파일', required=True, example="test.jpeg"),
     'crop_type' : fields.String(description='작물의 이름', required=True, example="tomato")
 })
 
+predict_response = predict_api.model('predict 응답', {
+    'contents': fields.List(fields.Nested({
+        'disease': fields.String(description='병해 이름', required=True, example="파프리카흰가루병"),
+        'percentage': fields.Float(description='확률', required=True, example=0.7027)
+    }), description='병해 및 확률 리스트'),
+    'image_path': fields.String(description='이미지 경로', required=True, example="20231029151432123test3.jpeg"),
+    'result': fields.Boolean(description='결과', required=True, example=True)
+})
+
 predict_return = predict_api.model('predict 결과', {
     'image_file': fields.Raw(description='jpeg 형식의 이미지 파일', required=True, example="20231023160713test.jpeg"),
+    'contents' : fields.String(description='')
 })
 
 # 모델 로딩
@@ -118,11 +130,14 @@ def is_allowed_file(input_img):
 def is_exist_file(input_img):
     return (str(input_img) == "<FileStorage: '' (None)>" or input_img.filename == '')
 
-@app.route('/home')
+
+@app.route('/test', methods=['POST'])
 def hello():
+    input_img = request.files['image_file']
+    save_image(input_img)
     return 'Hello World!'
 
-@predict_api.route('/')
+@predict_api.route('/predict')
 class Predict(Resource):
     
     @predict_api.doc(responses={500: 'Failed'})

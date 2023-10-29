@@ -73,7 +73,6 @@ image_fail_response = predict_api.model('Predict Image 실패 응답', {
    'result' : fields.Boolean(description='성공 여부', example="false")
 })
 
-
 # 모델 로딩
 tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
 strawberry_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
@@ -126,7 +125,7 @@ def add_result_list(result):
     
     for idx in ouput.index:
         name = match_name(ouput.loc[idx, 'name'])
-        confidence = round(ouput.loc[idx, 'confidence'], 4)
+        confidence = round(ouput.loc[idx, 'confidence'], 2)
         crop_reulst.append({"disease" : name, "percentage" : confidence})  
         
     return crop_reulst

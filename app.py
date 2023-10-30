@@ -121,14 +121,14 @@ def change_img_name(file):
 # 판단결과를 list로 리턴
 def add_result_list(result):
     ouput = result.pandas().xyxy[0] # 결과 text데이터
-    crop_reulst =[]
+    crop_result=[]
     
     for idx in ouput.index:
         name = match_name(ouput.loc[idx, 'name'])
         confidence = round(ouput.loc[idx, 'confidence'], 2)
-        crop_reulst.append({"disease" : name, "percentage" : confidence})  
+        crop_result.append({"disease" : name, "percentage" : confidence})  
         
-    return crop_reulst
+    return crop_result
 
 # 유요한 작물타입인지 확인
 def is_valid_crop(crop_type):
@@ -144,13 +144,6 @@ def is_allowed_file(input_img):
 # 업로드된 파일이 정상인지 확인
 def is_exist_file(input_img):
     return (str(input_img) == "<FileStorage: '' (None)>" or input_img.filename == '')
-
-
-@app.route('/test', methods=['POST'])
-def hello():
-    input_img = request.files['image_file']
-    save_image(input_img)
-    return 'Hello World!'
 
 @predict_api.route('/predict')
 class Predict(Resource):

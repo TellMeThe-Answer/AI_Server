@@ -8,9 +8,11 @@ from datetime import datetime
 from flask_restx import Api, Resource,  Namespace, fields
 from flask_cors import CORS
 
+# 총이미지 39012
+
 # 고추
-# 00,  a7,      a8,        b6, b7, b8
-# 정상, 고추탄저병, 고추흰가루병, 다량소결핍 N,P,K
+# 00_r0, a7_r1   , a8_r1,   , b6_r1, b7_r1, b8_r1
+# 정상  , 고추탄저병 , 고추흰가루병, 다량소결핍 N,P,K
 
 # 오이
 # 00_r0 , a3_r1 , a3_r2, a3_r3, a4_r0, a4_r1, a4_r2, a4_r3, b1_r1, b1_r2, b1_r3, b6_r1, b8_r1, b7_r1
@@ -91,17 +93,12 @@ image_fail_response = predict_api.model('Predict Image 실패 응답', {
 })
 
 # 모델 로딩
-tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
-strawberry_model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
-cucumber_model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
-pepper_model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
-
+model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
 # 모델 옵션
-def set_model_option(model):
-    model.max_det = 4  # 객체 탐지 수
-    model.conf = 0.01  # 신뢰도 값
-    model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
-    model.iou = 0.45  # 0.4 ~ 0.5 값
+model.max_det = 4  # 객체 탐지 수
+model.conf = 0.01  # 신뢰도 값
+model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
+model.iou = 0.45  # 0.4 ~ 0.5 값
 
 # 이미지 저장
 def save_image(file):
@@ -113,19 +110,6 @@ def match_name(code):
         if code == disease_code[index]:
             return (disease_name[index])
     return None
-
-# 작물 따라서 다른 모델 적용
-def run_crop_model(crop_type, train_img, img_size):
-    if crop_type == 'tomato':
-        return tomato_model(train_img, size = img_size)
-    elif crop_type == 'strawberry':
-        return strawberry_model(train_img, size = img_size)
-    elif crop_type == 'cucumber':
-        return cucumber_model(train_img, size = img_size)
-    elif crop_type == 'pepper':
-        return pepper_model(train_img, size = img_size)
-    else:
-        return None
 
 # 이미지 고유시간으로 이름변경 
 def change_img_name(file):
@@ -198,7 +182,7 @@ class Predict(Resource):
         
         # 모델 실행
         train_img = input_dir + unique_name
-        result = run_crop_model(crop_type, train_img, 416)
+        result = model(train_img, 416)
         
         # 모델 결과 이미지
         result.print() 
@@ -234,13 +218,5 @@ class Predict(Resource):
             return response
     
 if __name__ == "__main__":
-    
-    # 모델 옵션 적용
-    set_model_option(tomato_model)
-    set_model_option(cucumber_model)
-    set_model_option(pepper_model)
-    set_model_option(strawberry_model)
-    
-    
     app.run(host='0.0.0.0', port=8080, debug=True)
 

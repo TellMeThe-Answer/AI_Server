@@ -37,12 +37,14 @@ disease_code = [
     'a10', 'a11', 'a12', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7',
     'b8'
 ]
-
 disease_name = [
     '정상', '딸기잿빛곰파이병', '딸기흰가루병', '오이노균병', '오이흰가루병', '토마토흰가루병', '토마토잿빛곰파이병',
     '고추탄저병', '고추흰가루병', '파프리카흰가루병', '파프리카잘록병', '시설포도탄저병', '시설포도노균병',
     '냉해피해', '열과', '칼슘결핍', '일소피해', '축과병', '다량원소결핍 (N)', '다량원소결핍 (P)', '다량원소결핍 (K)'
 ]
+
+disease_risk_code = ["r0", "r1", "r2", "r3"]
+disease_risk_name = ["정상", "초기", "중기", "말기"]
 
 input_dir = './img/input/'
 output_dir = './img/output/'
@@ -104,11 +106,18 @@ model.iou = 0.45  # 0.4 ~ 0.5 값
 def save_image(file):
     file.save(input_dir+ file.filename)
 
-# 결과 code를 한글로 매치
-def match_name(code):
+# 병해 code를 한글로 매치
+def match_disease_name(code):
     for index in range(len(disease_code)):
         if code == disease_code[index]:
             return (disease_name[index])
+    return None
+
+# 병해 risk code를 한글로 매치
+def match_disease_risk_name(code):
+    for index in range(len(disease_risk_code)):
+        if code == disease_risk_code[index]:
+            return (disease_risk_name[index])
     return None
 
 # 이미지 고유시간으로 이름변경 
@@ -121,13 +130,16 @@ def change_img_name(file):
 
 # 판단결과를 list로 리턴
 def add_result_list(result):
-    ouput = result.pandas().xyxy[0] # 결과 text데이터
+    output = result.pandas().xyxy[0] # 결과 text데이터
     crop_result=[]
     
-    for idx in ouput.index:
-        name = match_name(ouput.loc[idx, 'name'])
-        confidence = round(ouput.loc[idx, 'confidence'], 2)
-        crop_result.append({"disease" : name, "percentage" : confidence})  
+    for idx in output.index:
+        name_parts = output.loc[idx, 'name'].split('_')  # match_name(output.loc[idx, 'name'])
+        confidence = round(output.loc[idx, 'confidence'], 2)
+        crop = name_parts[1] # 딸기
+        disease = match_disease_name(name_parts[0]) # a1
+        risk = match_disease_risk_name(name_parts[2])# r1
+        crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "risk" : risk})  
         
     return crop_result
 
@@ -183,7 +195,7 @@ class Predict(Resource):
         # 모델 실행
         train_img = input_dir + unique_name
         result = model(train_img, 416)
-        
+
         # 모델 결과 이미지
         result.print() 
         result.save(save_dir=output_dir,exist_ok=True)  

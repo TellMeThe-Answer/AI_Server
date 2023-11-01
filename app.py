@@ -8,6 +8,23 @@ from datetime import datetime
 from flask_restx import Api, Resource,  Namespace, fields
 from flask_cors import CORS
 
+# 고추
+# 00,  a7,      a8,        b6, b7, b8
+# 정상, 고추탄저병, 고추흰가루병, 다량소결핍 N,P,K
+
+# 오이
+# 00_r0 , a3_r1 , a3_r2, a3_r3, a4_r0, a4_r1, a4_r2, a4_r3, b1_r1, b1_r2, b1_r3, b6_r1, b8_r1, b7_r1
+# 정상   , 오이노균병             , 오이흰가루병                 , 냉해피해              , 다량원소결핍 (N,P,K)
+
+# 토마토
+# 00_r0, a5_r0, a5_r1, a5_r2, a6_r1, a6_r2, a6_r3, b2_r1, b2_r2, b2_r3, b3_r2, b6_r1, b7_r0, b7_r1, b8_r1
+# 정상  , 토마토흰가루병         , 토마토잿빛곰팡이병      , 열과                , 칼슘결핍, 다량원소결핍(N,P,K)
+
+# 딸기
+# 00_r0, a1_r1, a1_r2, a1_r3, a2_r1,    b1_r1, b1_r2, b6_r1, b7_r1, b8_r1
+# 정상  , 딸기잿빛곰팡이병        , 딸기흰가루병,냉해피해       , 다량원소결핍 (N,P,K) 
+
+
 app = Flask(__name__)
 
 # 업로드 파일 최대 크기 설정 (단위: 바이트)
@@ -74,10 +91,10 @@ image_fail_response = predict_api.model('Predict Image 실패 응답', {
 })
 
 # 모델 로딩
-tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
-strawberry_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
-cucumber_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
-pepper_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
+tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
+strawberry_model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
+cucumber_model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
+pepper_model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
 
 # 모델 옵션
 def set_model_option(model):

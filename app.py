@@ -67,7 +67,9 @@ predict_request = predict_api.model('Predict 요청', {
 
 contents_fields = api.model('Predict Contents', {
     'disease': fields.String(description='병해 이름', example="파프리카흰가루병"),
-    'percentage': fields.Float(description='확률', example=0.7027)
+    'percentage': fields.Float(description='확률', example=0.7027),
+    'crop' : fields.String(description='작물 이름', example="고추"),
+    'risk' : fields.String(description='병해 피해 정도', example="정상, 초기, 중기, 말기")
 })
 
 predict_response = predict_api.model('Predict 응답', {

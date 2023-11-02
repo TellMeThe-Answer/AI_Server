@@ -151,6 +151,7 @@ def add_result_list(result, crop_type):
         disease = match_disease_name(name_parts[0]) # a1
         risk = match_disease_risk_name(name_parts[2])# r1
         
+        # 선택한 작물에 대한 병이 아닐 때 제외
         if crop_type == match_crop_kr_to_en(name_parts[1]):
             crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "risk" : risk})  
         
@@ -243,5 +244,5 @@ class Predict(Resource):
             return response
     
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
 

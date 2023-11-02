@@ -8,25 +8,6 @@ from datetime import datetime
 from flask_restx import Api, Resource,  Namespace, fields
 from flask_cors import CORS
 
-# 총이미지 39012
-
-# 고추
-# 00_r0, a7_r1   , a8_r1,   , b6_r1, b7_r1, b8_r1
-# 정상  , 고추탄저병 , 고추흰가루병, 다량원소결핍 N,P,K
-
-# 오이
-# 00_r0 , a3_r1 , a3_r2, a3_r3, a4_r0, a4_r1, a4_r2, a4_r3, b1_r1, b1_r2, b1_r3, b6_r1, b8_r1, b7_r1
-# 정상   , 오이노균병             , 오이흰가루병                 , 냉해피해              , 다량원소결핍 (N,P,K)
-
-# 토마토
-# 00_r0, a5_r0, a5_r1, a5_r2, a6_r1, a6_r2, a6_r3, b2_r1, b2_r2, b2_r3, b3_r2, b6_r1, b7_r0, b7_r1, b8_r1
-# 정상  , 토마토흰가루병         , 토마토잿빛곰팡이병      , 열과                , 칼슘결핍, 다량원소결핍(N,P,K)
-
-# 딸기
-# 00_r0, a1_r1, a1_r2, a1_r3, a2_r1,    b1_r1, b1_r2, b6_r1, b7_r1, b8_r1
-# 정상  , 딸기잿빛곰팡이병        , 딸기흰가루병,냉해피해       , 다량원소결핍 (N,P,K) 
-
-
 app = Flask(__name__)
 
 # 업로드 파일 최대 크기 설정 (단위: 바이트)
@@ -37,14 +18,12 @@ disease_code = [
     'a10', 'a11', 'a12', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7',
     'b8'
 ]
+
 disease_name = [
     '정상', '딸기잿빛곰파이병', '딸기흰가루병', '오이노균병', '오이흰가루병', '토마토흰가루병', '토마토잿빛곰파이병',
     '고추탄저병', '고추흰가루병', '파프리카흰가루병', '파프리카잘록병', '시설포도탄저병', '시설포도노균병',
     '냉해피해', '열과', '칼슘결핍', '일소피해', '축과병', '다량원소결핍 (N)', '다량원소결핍 (P)', '다량원소결핍 (K)'
 ]
-
-disease_risk_code = ["r0", "r1", "r2", "r3"]
-disease_risk_name = ["정상", "초기", "중기", "말기"]
 
 input_dir = './img/input/'
 output_dir = './img/output/'
@@ -95,41 +74,41 @@ image_fail_response = predict_api.model('Predict Image 실패 응답', {
 })
 
 # 모델 로딩
-model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
+tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
+strawberry_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
+cucumber_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
+pepper_model = torch.hub.load('./yolov5', 'custom', path='./model/best_model.pt', source='local')
+
 # 모델 옵션
-model.max_det = 4  # 객체 탐지 수
-model.conf = 0.2  # 신뢰도 값
-model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
-model.iou = 0.45  # 0.4 ~ 0.5 값
+def set_model_option(model):
+    model.max_det = 4  # 객체 탐지 수
+    model.conf = 0.01  # 신뢰도 값
+    model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
+    model.iou = 0.45  # 0.4 ~ 0.5 값
 
 # 이미지 저장
 def save_image(file):
     file.save(input_dir+ file.filename)
 
-# 병해 code를 한글로 매치
-def match_disease_name(code):
+# 결과 code를 한글로 매치
+def match_name(code):
     for index in range(len(disease_code)):
         if code == disease_code[index]:
             return (disease_name[index])
     return None
 
-# 병해 risk code를 한글로 매치
-def match_disease_risk_name(code):
-    for index in range(len(disease_risk_code)):
-        if code == disease_risk_code[index]:
-            return (disease_risk_name[index])
-    return None
-
-# 작물 한글이름 영어이름 변환
-def match_crop_kr_to_en(kr):
-    if kr == "딸기":
-        return 'strawberry'
-    elif kr == "토마토":
-        return 'tomato'
-    elif kr == '오이':
-        return 'cucumber'
+# 작물 따라서 다른 모델 적용
+def run_crop_model(crop_type, train_img, img_size):
+    if crop_type == 'tomato':
+        return tomato_model(train_img, size = img_size)
+    elif crop_type == 'strawberry':
+        return strawberry_model(train_img, size = img_size)
+    elif crop_type == 'cucumber':
+        return cucumber_model(train_img, size = img_size)
+    elif crop_type == 'pepper':
+        return pepper_model(train_img, size = img_size)
     else:
-        return 'pepper'
+        return None
 
 # 이미지 고유시간으로 이름변경 
 def change_img_name(file):
@@ -140,19 +119,14 @@ def change_img_name(file):
     return changed_name  
 
 # 판단결과를 list로 리턴
-def add_result_list(result, crop_type):
-    output = result.pandas().xyxy[0] # 결과 text데이터
+def add_result_list(result):
+    ouput = result.pandas().xyxy[0] # 결과 text데이터
     crop_result=[]
     
-    for idx in output.index:
-        name_parts = output.loc[idx, 'name'].split('_')  # match_name(output.loc[idx, 'name'])
-        confidence = round(output.loc[idx, 'confidence'], 2)
-        crop = name_parts[1] # 딸기
-        disease = match_disease_name(name_parts[0]) # a1
-        risk = match_disease_risk_name(name_parts[2])# r1
-        
-        if crop_type == match_crop_kr_to_en(name_parts[1]):
-            crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "risk" : risk})  
+    for idx in ouput.index:
+        name = match_name(ouput.loc[idx, 'name'])
+        confidence = round(ouput.loc[idx, 'confidence'], 2)
+        crop_result.append({"disease" : name, "percentage" : confidence})  
         
     return crop_result
 
@@ -207,14 +181,14 @@ class Predict(Resource):
         
         # 모델 실행
         train_img = input_dir + unique_name
-        result = model(train_img, 416)
-
+        result = run_crop_model(crop_type, train_img, 416)
+        
         # 모델 결과 이미지
         result.print() 
         result.save(save_dir=output_dir,exist_ok=True)  
         
         # 결과값 리스트로 저장
-        crop_reulst = add_result_list(result, crop_type)
+        crop_reulst = add_result_list(result)
         
         data['result'] = True
         data['contents'] = crop_reulst
@@ -243,5 +217,12 @@ class Predict(Resource):
             return response
     
 if __name__ == "__main__":
+    
+    # 모델 옵션 적용
+    set_model_option(tomato_model)
+    set_model_option(cucumber_model)
+    set_model_option(pepper_model)
+    set_model_option(strawberry_model)
+    
+    
     app.run(host='0.0.0.0', port=8080, debug=True)
-

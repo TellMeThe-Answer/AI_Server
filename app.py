@@ -12,7 +12,7 @@ from flask_cors import CORS
 
 # 고추
 # 00_r0, a7_r1   , a8_r1,   , b6_r1, b7_r1, b8_r1
-# 정상  , 고추탄저병 , 고추흰가루병, 다량소결핍 N,P,K
+# 정상  , 고추탄저병 , 고추흰가루병, 다량원소결핍 N,P,K
 
 # 오이
 # 00_r0 , a3_r1 , a3_r2, a3_r3, a4_r0, a4_r1, a4_r2, a4_r3, b1_r1, b1_r2, b1_r3, b6_r1, b8_r1, b7_r1
@@ -98,7 +98,7 @@ image_fail_response = predict_api.model('Predict Image 실패 응답', {
 model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
 # 모델 옵션
 model.max_det = 4  # 객체 탐지 수
-model.conf = 0.01  # 신뢰도 값
+model.conf = 0.2  # 신뢰도 값
 model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
 model.iou = 0.45  # 0.4 ~ 0.5 값
 
@@ -120,6 +120,17 @@ def match_disease_risk_name(code):
             return (disease_risk_name[index])
     return None
 
+# 작물 한글이름 영어이름 변환
+def match_crop_kr_to_en(kr):
+    if kr == "딸기":
+        return 'strawberry'
+    elif kr == "토마토":
+        return 'tomato'
+    elif kr == '오이':
+        return 'cucumber'
+    else:
+        return 'pepper'
+
 # 이미지 고유시간으로 이름변경 
 def change_img_name(file):
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -129,7 +140,7 @@ def change_img_name(file):
     return changed_name  
 
 # 판단결과를 list로 리턴
-def add_result_list(result):
+def add_result_list(result, crop_type):
     output = result.pandas().xyxy[0] # 결과 text데이터
     crop_result=[]
     
@@ -139,7 +150,9 @@ def add_result_list(result):
         crop = name_parts[1] # 딸기
         disease = match_disease_name(name_parts[0]) # a1
         risk = match_disease_risk_name(name_parts[2])# r1
-        crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "risk" : risk})  
+        
+        if crop_type == match_crop_kr_to_en(name_parts[1]):
+            crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "risk" : risk})  
         
     return crop_result
 
@@ -201,7 +214,7 @@ class Predict(Resource):
         result.save(save_dir=output_dir,exist_ok=True)  
         
         # 결과값 리스트로 저장
-        crop_reulst = add_result_list(result)
+        crop_reulst = add_result_list(result, crop_type)
         
         data['result'] = True
         data['contents'] = crop_reulst

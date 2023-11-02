@@ -1,4 +1,3 @@
-
 *.json
 *.txt
 *.pt
@@ -9,8 +8,8 @@
 ./label/train_img
 ./label/val_img
 
-./img/input/*
-./img/output/*
+./img/input/*.jpeg
+./img/output/*jpeg
 runs/
 
 

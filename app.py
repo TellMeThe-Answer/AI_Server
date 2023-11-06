@@ -69,7 +69,7 @@ contents_fields = api.model('Predict Contents', {
     'disease': fields.String(description='병해 이름', example="파프리카흰가루병"),
     'percentage': fields.Float(description='확률', example=0.7027),
     'crop' : fields.String(description='작물 이름', example="고추"),
-    'risk' : fields.String(description='병해 피해 정도', example="정상, 초기, 중기, 말기")
+    'risk' : fields.String(description='병해 피해 정도', example="정상")
 })
 
 predict_response = predict_api.model('Predict 응답', {
@@ -122,17 +122,6 @@ def match_disease_risk_name(code):
             return (disease_risk_name[index])
     return None
 
-# 작물 한글이름 영어이름 변환
-def match_crop_kr_to_en(kr):
-    if kr == "딸기":
-        return 'strawberry'
-    elif kr == "토마토":
-        return 'tomato'
-    elif kr == '오이':
-        return 'cucumber'
-    else:
-        return 'pepper'
-
 # 이미지 고유시간으로 이름변경 
 def change_img_name(file):
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -159,9 +148,16 @@ def add_result_list(result, crop_type):
         
     return crop_result
 
-# 유요한 작물타입인지 확인
-def is_valid_crop(crop_type):
+# 유효한 작물타입(영어)인지 확인
+def is_valid_crop_en(crop_type):
     if crop_type == 'tomato' or crop_type == 'strawberry' or crop_type == 'cucumber' or crop_type == 'pepper':
+        return True
+    else:
+        return False
+
+# 유효한 작물타입(영어)인지 확인
+def is_valid_crop_kr(crop_type):
+    if crop_type == '토마토' or crop_type == '딸기' or crop_type == '오이' or crop_type == '고추':
         return True
     else:
         return False
@@ -193,7 +189,7 @@ class Predict(Resource):
             return jsonify({"error": "작물정보가 업로드 되지 않았습니다.", "result": False})
         
         # 작물 입력 오류
-        if not is_valid_crop(crop_type):
+        if not is_valid_crop_kr(crop_type):
             return jsonify({"error" : "tomato, strawberry, cucumber, pepper 중 하나를 입력해주세요.", "result" : False})
         
         # 파일이 제대로 업로드 되었는지 확인
@@ -223,7 +219,7 @@ class Predict(Resource):
         data['contents'] = crop_reulst
         
         # 문자열에서 마지막 점 이후의 모든 문자를 .jpeg로 대체
-        data['image_path'] = unique_name.rsplit('.', 1)[0] + ".jpeg"
+        data['image_path'] = unique_name.rsplit('.', 1)[0] + ".jpg"
         
         return jsonify(data)
     
@@ -234,10 +230,10 @@ class Predict(Resource):
     @predict_api.response(500, 'Fail', image_fail_response)
     def get(self):
         """판단 결과사진을 리턴해줍니다."""
-        data = request.json
-
+    
         try:
-            image_path = output_dir + data['image_name'] 
+            image_name = request.args.get('image_name')
+            image_path = output_dir + image_name
             return send_file(image_path, mimetype='image/jpeg')
 
         except FileNotFoundError:
@@ -247,4 +243,3 @@ class Predict(Resource):
     
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
-

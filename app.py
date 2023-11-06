@@ -38,7 +38,7 @@ disease_code = [
     'b8'
 ]
 disease_name = [
-    '정상', '딸기잿빛곰파이병', '딸기흰가루병', '오이노균병', '오이흰가루병', '토마토흰가루병', '토마토잿빛곰팡이병',
+    '정상', '딸기잿빛곰팡이병', '딸기흰가루병', '오이노균병', '오이흰가루병', '토마토흰가루병', '토마토잿빛곰팡이병',
     '고추탄저병', '고추흰가루병', '파프리카흰가루병', '파프리카잘록병', '시설포도탄저병', '시설포도노균병',
     '냉해피해', '열과', '칼슘결핍', '일소피해', '축과병', '다량원소결핍 (N)', '다량원소결핍 (P)', '다량원소결핍 (K)'
 ]
@@ -69,7 +69,7 @@ contents_fields = api.model('Predict Contents', {
     'disease': fields.String(description='병해 이름', example="파프리카흰가루병"),
     'percentage': fields.Float(description='확률', example=0.7027),
     'crop' : fields.String(description='작물 이름', example="고추"),
-    'risk' : fields.String(description='병해 피해 정도', example="정상, 초기, 중기, 말기")
+    'risk' : fields.String(description='병해 피해 정도', example="정상")
 })
 
 predict_response = predict_api.model('Predict 응답', {
@@ -159,9 +159,9 @@ def add_result_list(result, crop_type):
         
     return crop_result
 
-# 유요한 작물타입인지 확인
-def is_valid_crop(crop_type):
-    if crop_type == 'tomato' or crop_type == 'strawberry' or crop_type == 'cucumber' or crop_type == 'pepper':
+# 유효한 작물타입(한국어)인지 확인
+def is_valid_crop_kr(crop_type):
+    if crop_type == '토마토' or crop_type == '딸기' or crop_type == '오이' or crop_type == '고추':
         return True
     else:
         return False
@@ -193,7 +193,7 @@ class Predict(Resource):
             return jsonify({"error": "작물정보가 업로드 되지 않았습니다.", "result": False})
         
         # 작물 입력 오류
-        if not is_valid_crop(crop_type):
+        if not is_valid_crop_kr(crop_type):
             return jsonify({"error" : "tomato, strawberry, cucumber, pepper 중 하나를 입력해주세요.", "result" : False})
         
         # 파일이 제대로 업로드 되었는지 확인
@@ -234,10 +234,11 @@ class Predict(Resource):
     @predict_api.response(500, 'Fail', image_fail_response)
     def get(self):
         """판단 결과사진을 리턴해줍니다."""
-        data = request.json
 
         try:
-            image_path = output_dir + data['image_name'] 
+            image_name = request.args.get('image_name')
+            image_path = output_dir + image_name
+            
             return send_file(image_path, mimetype='image/jpeg')
 
         except FileNotFoundError:
@@ -246,5 +247,4 @@ class Predict(Resource):
             return response
     
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
-
+    app.run(host='0.0.0.0', port=5050, debug=True)

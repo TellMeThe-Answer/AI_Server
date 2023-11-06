@@ -223,7 +223,7 @@ class Predict(Resource):
         data['contents'] = crop_reulst
         
         # 문자열에서 마지막 점 이후의 모든 문자를 .jpeg로 대체
-        data['image_path'] = new_string = unique_name.rsplit('.', 1)[0] + ".jpeg"
+        data['image_path'] = unique_name.rsplit('.', 1)[0] + ".jpeg"
         
         return jsonify(data)
     

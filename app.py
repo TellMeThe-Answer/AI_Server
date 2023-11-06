@@ -154,7 +154,7 @@ def add_result_list(result, crop_type):
         risk = match_disease_risk_name(name_parts[2])# r1
         
         # 선택한 작물에 대한 병이 아닐 때 제외
-        if crop_type == match_crop_kr_to_en(name_parts[1]):
+        if crop_type == name_parts[1]:
             crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "risk" : risk})  
         
     return crop_result

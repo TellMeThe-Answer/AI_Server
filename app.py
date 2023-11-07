@@ -222,17 +222,20 @@ class Predict(Resource):
         data['image_path'] = unique_name.rsplit('.', 1)[0] + ".jpg"
         
         return jsonify(data)
-    
-    # 결과 이미지 요청
+
+# 결과 이미지 요청
+@predict_api.route('/image')
+class ImageResult(Resource):
     @predict_api.doc(params={'image_name': '판단 후 리턴받은 이미지의 이름'})
     @predict_api.expect(image_request)
     @predict_api.response(200, 'Success', image_response)
     @predict_api.response(500, 'Fail', image_fail_response)
-    def get(self):
-        """판단 결과사진을 리턴해줍니다."""
     
+    def post(self):
+        """판단 결과사진을 리턴해줍니다."""
         try:
-            image_name = request.args.get('image_name')
+            data =  request.get_json()
+            image_name =   data['image_name']
             image_path = output_dir + image_name
             return send_file(image_path, mimetype='image/jpeg')
 
@@ -240,6 +243,7 @@ class Predict(Resource):
             response = jsonify({'error': 'Image not found', 'result' : False})
             response.status_code = 404
             return response
+   
     
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True)

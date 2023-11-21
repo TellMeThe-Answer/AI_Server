@@ -165,6 +165,19 @@ def match_disease_risk_name(code):
             return (disease_risk_name[index])
     return None
 
+
+    
+# 작물에 따른 방제정보 링크
+def match_crop_control_imformation(crop_name, disease_name):
+    if crop_name == '딸기':
+        return strawberry_url[disease_name] 
+    elif crop_name == '오이':
+        return cucumber_url[disease_name]
+    elif crop_name == '토마토':
+        return tomato_url[disease_name]
+    elif crop_name == '고추':
+        return pepper_url[disease_name]
+    
 # 이미지 고유시간으로 이름변경 
 def change_img_name(file):
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -179,11 +192,12 @@ def add_result_list(result, crop_type):
     crop_result=[]
     
     for idx in output.index:
-        name_parts = output.loc[idx, 'name'].split('_')  # match_name(output.loc[idx, 'name'])
+        name_parts = output.loc[idx, 'name'].split('_')
         confidence = round(output.loc[idx, 'confidence'], 2)
-        crop = name_parts[1] # 딸기
-        disease = match_disease_name(name_parts[0]) # a1
-        risk = match_disease_risk_name(name_parts[2])# r1
+        crop = name_parts[1] # 고추
+        disease = match_disease_name(name_parts[0]) # 고추탄저병
+        disease_url = match_crop_control_imformation(crop_name=crop, disease_name=disease)
+        risk = match_disease_risk_name(name_parts[2])# 초기
         
         # 선택한 작물에 대한 병이 아닐 때 제외
         if crop_type == name_parts[1]:
@@ -215,9 +229,7 @@ def is_allowed_file(input_img):
 def is_exist_file(input_img):
     return (str(input_img) == "<FileStorage: '' (None)>" or input_img.filename == '')
 
-# 작물에 따른 방제정보 링크
-def get_crop_control_imformation(crop_name, disease_name):
-    if crop_name == '딸기':
+
         
         
         

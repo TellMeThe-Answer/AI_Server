@@ -110,6 +110,7 @@ predict_request = predict_api.model('Predict 요청', {
 
 contents_fields = api.model('Predict Contents', {
     'disease': fields.String(description='병해 이름', example="파프리카흰가루병"),
+    'disease_url' : fields.String(description='방제 정보 URL', example="https://www.syngenta.co.kr/gocu-tanjeobyeong-anthracnose"),
     'percentage': fields.Float(description='확률', example=0.7027),
     'crop' : fields.String(description='작물 이름', example="고추"),
     'risk' : fields.String(description='병해 피해 정도', example="정상")
@@ -201,7 +202,7 @@ def add_result_list(result, crop_type):
         
         # 선택한 작물에 대한 병이 아닐 때 제외
         if crop_type == name_parts[1]:
-            crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "risk" : risk})  
+            crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "risk" : risk, "disease_url" : disease_url})  
     if not crop_result:
         crop_result.append(None)
         
@@ -229,10 +230,6 @@ def is_allowed_file(input_img):
 def is_exist_file(input_img):
     return (str(input_img) == "<FileStorage: '' (None)>" or input_img.filename == '')
 
-
-        
-        
-        
 
     
 @predict_api.route('/predict')

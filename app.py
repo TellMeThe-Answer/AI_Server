@@ -37,11 +37,54 @@ disease_code = [
     'a10', 'a11', 'a12', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7',
     'b8'
 ]
+
 disease_name = [
     '정상', '딸기잿빛곰팡이병', '딸기흰가루병', '오이노균병', '오이흰가루병', '토마토흰가루병', '토마토잿빛곰팡이병',
     '고추탄저병', '고추흰가루병', '파프리카흰가루병', '파프리카잘록병', '시설포도탄저병', '시설포도노균병',
     '냉해피해', '열과', '칼슘결핍', '일소피해', '축과병', '다량원소결핍 (N)', '다량원소결핍 (P)', '다량원소결핍 (K)'
 ]
+
+
+strawberry_url = {
+    # 딸기
+    '딸기잿빛곰팡이병' : 'https://www.syngenta.co.kr/ddalgi-jaesbicgompangibyeong-gray-mold',
+    '딸기흰가루병' : 'https://www.syngenta.co.kr/ddalgi-hyingarubyeong-powdery-mildew',
+    '냉해피해': "http://www.hortitimes.com/news/articleView.html?idxno=3472",
+    '다량원소결핍 (N)' : "https://www.yara.kr/crop-nutrition/strawberries/986/671/",
+    '다량원소결핍 (P)' : "https://www.yara.kr/crop-nutrition/strawberries/986/671/", 
+    '다량원소결핍 (K)' : "https://www.yara.kr/crop-nutrition/strawberries/986/671/",
+}
+
+cucumber_url = {
+    # 오이
+    '오이노균병' : 'https://www.syngenta.co.kr/oi-nogyunbyeongdowny-mildew',
+    '오이흰가루병' : 'https://www.syngenta.co.kr/oi-hyingarubyeongpowdery-mildew',
+    '냉해피해' : "http://www.yongamnonghyup.co.kr/index.php?mid=jaje_board&document_srl=2822&listStyle=viewer",
+    '다량원소결핍 (N)' : "https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=yaronongjang&logNo=140163388831",
+    '다량원소결핍 (P)' : "https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=yaronongjang&logNo=140163388831", 
+    '다량원소결핍 (K)' : "https://m.blog.naver.com/PostView.naver?isHttpsRedirect=true&blogId=yaronongjang&logNo=140163388831",
+}
+
+tomato_url = {    
+    # 토마토
+    '토마토흰가루병' : "https://farmmorning.com/disease/%ED%9D%B0%EA%B0%80%EB%A3%A8%EB%B3%91?crop=%ED%86%A0%EB%A7%88%ED%86%A0", 
+    '토마토잿빛곰팡이병' : "https://www.syngenta.co.kr/tomato-jaesbicgompangibyeong-gray-mold",
+    '열과' : "https://www.yara.kr/crop-nutrition/tomato/tomato-health/influencing-tomato-cracking/", 
+    '칼슘결핍' : "https://www.yara.kr/crop-nutrition/tomato/317/ca700/",
+    '다량원소결핍 (N)' : "https://www.yara.kr/crop-nutrition/tomato/317/250/",
+    '다량원소결핍 (P)' : "https://www.yara.kr/crop-nutrition/tomato/317/250/", 
+    '다량원소결핍 (K)' : "https://www.yara.kr/crop-nutrition/tomato/317/250/",
+}
+
+pepper_url = {
+    # 고추
+    '고추탄저병' : "https://www.syngenta.co.kr/gocu-tanjeobyeong-anthracnose",
+    '고추흰가루병' : "https://www.syngenta.co.kr/gocu-hyingarubyeong-powdery-mildew",
+    '칼슘결핍' : "https://www.yara.kr/crop-nutrition/chili/62/ca92/",
+    '다량원소결핍 (N)' : "https://www.yara.kr/crop-nutrition/chili/62/104/",
+    '다량원소결핍 (P)' : "https://www.yara.kr/crop-nutrition/chili/62/104/", 
+    '다량원소결핍 (K)' : "https://www.yara.kr/crop-nutrition/chili/62/104/",
+}
 
 disease_risk_code = ["r0", "r1", "r2", "r3"]
 disease_risk_name = ["정상", "초기", "중기", "말기"]
@@ -172,6 +215,14 @@ def is_allowed_file(input_img):
 def is_exist_file(input_img):
     return (str(input_img) == "<FileStorage: '' (None)>" or input_img.filename == '')
 
+# 작물에 따른 방제정보 링크
+def get_crop_control_imformation(crop_name, disease_name):
+    if crop_name == '딸기':
+        
+        
+        
+
+    
 @predict_api.route('/predict')
 class Predict(Resource):
     
@@ -192,7 +243,7 @@ class Predict(Resource):
         
         # 작물 입력 오류
         if not is_valid_crop_kr(crop_type):
-            return jsonify({"error" : "tomato, strawberry, cucumber, pepper 중 하나를 입력해주세요.", "result" : False})
+            return jsonify({"error" : "토마토, 딸기, 오이, 고추 중 하나를 입력해주세요.", "result" : False})
         
         # 파일이 제대로 업로드 되었는지 확인
         if is_exist_file(input_img):

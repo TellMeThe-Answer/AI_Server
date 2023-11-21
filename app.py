@@ -145,6 +145,8 @@ def add_result_list(result, crop_type):
         # 선택한 작물에 대한 병이 아닐 때 제외
         if crop_type == name_parts[1]:
             crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "risk" : risk})  
+    if not crop_result:
+        crop_result.append(None)
         
     return crop_result
 

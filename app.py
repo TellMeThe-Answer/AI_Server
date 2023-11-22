@@ -143,7 +143,7 @@ image_fail_response = predict_api.model('Predict Image 실패 응답', {
 # 모델 로딩
 model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
 # 모델 옵션
-model.max_det = 4  # 객체 탐지 수
+model.max_det = 3  # 객체 탐지 수
 model.conf = 0.2  # 신뢰도 값
 model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
 model.iou = 0.45  # 0.4 ~ 0.5 값

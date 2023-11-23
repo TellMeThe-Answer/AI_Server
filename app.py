@@ -141,12 +141,18 @@ image_fail_response = predict_api.model('Predict Image 실패 응답', {
 })
 
 # 모델 로딩
-model = torch.hub.load('./yolov5', 'custom', path='./model/best.pt', source='local')
+tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
+strawberry_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
+cucumber_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
+pepper_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
+
+
 # 모델 옵션
-model.max_det = 3  # 객체 탐지 수
-model.conf = 0.2  # 신뢰도 값
-model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
-model.iou = 0.45  # 0.4 ~ 0.5 값
+def set_model_option(model):
+    model.max_det = 4  # 객체 탐지 수
+    model.conf = 0.01  # 신뢰도 값
+    model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
+    model.iou = 0.45  # 0.4 ~ 0.5 값
 
 # 이미지 저장
 def save_image(file):
@@ -165,7 +171,6 @@ def match_disease_risk_name(code):
         if code == disease_risk_code[index]:
             return (disease_risk_name[index])
     return None
-
 
     
 # 작물에 따른 방제정보 링크
@@ -198,11 +203,10 @@ def add_result_list(result, crop_type):
         crop = name_parts[1] # 고추
         disease = match_disease_name(name_parts[0]) # 고추탄저병
         disease_url = match_crop_control_imformation(crop_name=crop, disease_name=disease)
-        risk = match_disease_risk_name(name_parts[2])# 초기
         
         # 선택한 작물에 대한 병이 아닐 때 제외
-        if crop_type == name_parts[1]:
-            crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "risk" : risk, "disease_url" : disease_url})  
+        # if crop_type == name_parts[1]:
+        crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "disease_url" : disease_url})  
     if not crop_result:
         crop_result.append(None)
         
@@ -229,6 +233,19 @@ def is_allowed_file(input_img):
 # 업로드된 파일이 정상인지 확인
 def is_exist_file(input_img):
     return (str(input_img) == "<FileStorage: '' (None)>" or input_img.filename == '')
+
+# 작물 따라서 다른 모델 적용
+def run_crop_model(crop_type, train_img, img_size):
+    if crop_type == '토마토':
+        return tomato_model(train_img, size = img_size)
+    elif crop_type == '딸기':
+        return strawberry_model(train_img, size = img_size)
+    elif crop_type == '오이':
+        return cucumber_model(train_img, size = img_size)
+    elif crop_type == '고추':
+        return pepper_model(train_img, size = img_size)
+    else:
+        return None
 
 
     
@@ -268,8 +285,8 @@ class Predict(Resource):
         
         # 모델 실행
         train_img = input_dir + unique_name
-        result = model(train_img, 416)
-
+        result = run_crop_model(crop_type, train_img, 416)
+        
         # 모델 결과 이미지
         result.print() 
         result.save(save_dir=output_dir,exist_ok=True)  
@@ -304,4 +321,9 @@ class Predict(Resource):
 
     
 if __name__ == "__main__":
+     # 모델 옵션 적용
+    set_model_option(tomato_model)
+    set_model_option(cucumber_model)
+    set_model_option(pepper_model)
+    set_model_option(strawberry_model)
     app.run(host='0.0.0.0', port=5050, debug=True)

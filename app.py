@@ -47,6 +47,7 @@ disease_name = [
 
 strawberry_url = {
     # 딸기
+    '정상' : None, 
     '딸기잿빛곰팡이병' : 'https://www.syngenta.co.kr/ddalgi-jaesbicgompangibyeong-gray-mold',
     '딸기흰가루병' : 'https://www.syngenta.co.kr/ddalgi-hyingarubyeong-powdery-mildew',
     '냉해피해': "http://www.hortitimes.com/news/articleView.html?idxno=3472",
@@ -57,6 +58,7 @@ strawberry_url = {
 
 cucumber_url = {
     # 오이
+    '정상' : None, 
     '오이노균병' : 'https://www.syngenta.co.kr/oi-nogyunbyeongdowny-mildew',
     '오이흰가루병' : 'https://www.syngenta.co.kr/oi-hyingarubyeongpowdery-mildew',
     '냉해피해' : "http://www.yongamnonghyup.co.kr/index.php?mid=jaje_board&document_srl=2822&listStyle=viewer",
@@ -67,6 +69,7 @@ cucumber_url = {
 
 tomato_url = {    
     # 토마토
+    '정상' : None, 
     '토마토흰가루병' : "https://farmmorning.com/disease/%ED%9D%B0%EA%B0%80%EB%A3%A8%EB%B3%91?crop=%ED%86%A0%EB%A7%88%ED%86%A0", 
     '토마토잿빛곰팡이병' : "https://www.syngenta.co.kr/tomato-jaesbicgompangibyeong-gray-mold",
     '열과' : "https://www.yara.kr/crop-nutrition/tomato/tomato-health/influencing-tomato-cracking/", 
@@ -78,6 +81,7 @@ tomato_url = {
 
 pepper_url = {
     # 고추
+    '정상' : None, 
     '고추탄저병' : "https://www.syngenta.co.kr/gocu-tanjeobyeong-anthracnose",
     '고추흰가루병' : "https://www.syngenta.co.kr/gocu-hyingarubyeong-powdery-mildew",
     '칼슘결핍' : "https://www.yara.kr/crop-nutrition/chili/62/ca92/",
@@ -150,7 +154,7 @@ pepper_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt
 # 모델 옵션
 def set_model_option(model):
     model.max_det = 4  # 객체 탐지 수
-    model.conf = 0.01  # 신뢰도 값
+    model.conf = 0.2  # 신뢰도 값
     model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
     model.iou = 0.45  # 0.4 ~ 0.5 값
 
@@ -158,6 +162,19 @@ def set_model_option(model):
 def save_image(file):
     file.save(input_dir+ file.filename)
 
+# 결과 작물영어 이름을 한글로 매치
+def match_crop_name(en_name):
+    if en_name == 'strawberry':
+        return "딸기"
+    elif en_name == 'cucumber':
+        return "오이"
+    elif en_name == 'pepper':
+        return "고추"
+    elif en_name == 'tomato':
+        return "토마토"
+    else:
+        return None
+    
 # 병해 code를 한글로 매치
 def match_disease_name(code):
     for index in range(len(disease_code)):
@@ -200,13 +217,13 @@ def add_result_list(result, crop_type):
     for idx in output.index:
         name_parts = output.loc[idx, 'name'].split('_')
         confidence = round(output.loc[idx, 'confidence'], 2)
-        crop = name_parts[1] # 고추
+        crop = match_crop_name(name_parts[1]) # 고추
         disease = match_disease_name(name_parts[0]) # 고추탄저병
         disease_url = match_crop_control_imformation(crop_name=crop, disease_name=disease)
         
         # 선택한 작물에 대한 병이 아닐 때 제외
-        # if crop_type == name_parts[1]:
-        crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "disease_url" : disease_url})  
+        if crop_type == name_parts[1]:
+            crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "disease_url" : disease_url})  
     if not crop_result:
         crop_result.append(None)
         

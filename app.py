@@ -145,7 +145,9 @@ image_fail_response = predict_api.model('Predict Image 실패 응답', {
 })
 
 # 모델 로딩
-tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
+tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/result/tomato.pt', source='local')
+tomato_re_model =  torch.hub.load('./yolov5', 'custom', path='./model/result/tomato-b2.pt', source='local')
+
 strawberry_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
 cucumber_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
 pepper_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
@@ -189,7 +191,6 @@ def match_disease_risk_name(code):
             return (disease_risk_name[index])
     return None
 
-    
 # 작물에 따른 방제정보 링크
 def match_crop_control_imformation(crop_name, disease_name):
     if crop_name == '딸기':
@@ -222,12 +223,35 @@ def add_result_list(result, crop_type):
         disease_url = match_crop_control_imformation(crop_name=crop, disease_name=disease)
         
         # 선택한 작물에 대한 병이 아닐 때 제외
-        if crop_type == name_parts[1]:
-            crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "disease_url" : disease_url})  
+        # if crop_type == name_parts[1]:
+        crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "disease_url" : disease_url})  
     if not crop_result:
         crop_result.append(None)
         
     return crop_result
+
+# 다시 판단할지 결정
+def check_re_model(result, crop_type):
+    
+    output = result.pandas().xyxy[0] # 결과 text데이터
+    
+    for idx in output.index:
+        name_parts = output.loc[idx, 'name'].split('_')
+        disease_code = (name_parts[0]) # 질병코드
+        
+        if crop_type == '토마토' and disease_code == 'b2':
+            return True
+                    
+    return False
+
+# 작물 따라서 다른 모델 적용
+def rerun_crop_model(crop_type, train_img, img_size):
+    if crop_type == '토마토':
+        return tomato_re_model(train_img, size = img_size)
+
+    return None
+
+   
 
 # 유효한 작물타입(영어)인지 확인
 def is_valid_crop_en(crop_type):
@@ -304,9 +328,13 @@ class Predict(Resource):
         train_img = input_dir + unique_name
         result = run_crop_model(crop_type, train_img, 416)
         
+        if check_re_model(result, crop_type): 
+            result = rerun_crop_model(crop_type, train_img, 416)
+            
         # 모델 결과 이미지
         result.print() 
         result.save(save_dir=output_dir,exist_ok=True)  
+        
         
         # 결과값 리스트로 저장
         crop_reulst = add_result_list(result, crop_type)

@@ -156,7 +156,7 @@ pepper_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt
 # 모델 옵션
 def set_model_option(model):
     model.max_det = 3  # 객체 탐지 수
-    model.conf = 0.5  # 신뢰도 값
+    model.conf = 0.8  # 신뢰도 값
     model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
     model.iou = 0.45  # 0.4 ~ 0.5 값
 
@@ -222,8 +222,9 @@ def add_result_list(result, crop_type):
         disease = match_disease_name(name_parts[0]) # 고추탄저병
         disease_url = match_crop_control_imformation(crop_name=crop, disease_name=disease)
         
+        print(confidence)
         # 선택한 작물에 대한 병이 아닐 때 제외
-        if crop_type == name_parts[1]:
+        if crop_type == crop:
             crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "disease_url" : disease_url})  
     if not crop_result:
         crop_result.append(None)
@@ -250,6 +251,8 @@ def rerun_crop_model(crop_type, train_img, img_size):
         return tomato_re_model(train_img, size = img_size)
 
     return None
+
+   
 
 # 유효한 작물타입(영어)인지 확인
 def is_valid_crop_en(crop_type):
@@ -286,6 +289,8 @@ def run_crop_model(crop_type, train_img, img_size):
     else:
         return None
 
+
+    
 @predict_api.route('/predict')
 class Predict(Resource):
     
@@ -359,10 +364,12 @@ class Predict(Resource):
             response = jsonify({'error': 'Image not found', 'result' : False})
             response.status_code = 404
             return response
+
     
 if __name__ == "__main__":
      # 모델 옵션 적용
     set_model_option(tomato_model)
+    set_model_option(tomato_re_model)
     set_model_option(cucumber_model)
     set_model_option(pepper_model)
     set_model_option(strawberry_model)

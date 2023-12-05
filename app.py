@@ -145,18 +145,16 @@ image_fail_response = predict_api.model('Predict Image 실패 응답', {
 })
 
 # 모델 로딩
-tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/result/tomato.pt', source='local')
-tomato_re_model =  torch.hub.load('./yolov5', 'custom', path='./model/result/tomato-b2.pt', source='local')
-
-strawberry_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
+tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/final/strawberry-final-best.pt', source='local')
+strawberry_model = torch.hub.load('./yolov5', 'custom', path='./model/result/strawberry-all.pt', source='local')
 cucumber_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
 pepper_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
 
 
 # 모델 옵션
 def set_model_option(model):
-    model.max_det = 3  # 객체 탐지 수
-    model.conf = 0.8  # 신뢰도 값
+    model.max_det = 4  # 객체 탐지 수
+    model.conf = 0.45  # 신뢰도 값
     model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
     model.iou = 0.45  # 0.4 ~ 0.5 값
 
@@ -217,6 +215,7 @@ def add_result_list(result, crop_type):
     
     for idx in output.index:
         name_parts = output.loc[idx, 'name'].split('_')
+        print(name_parts)
         confidence = round(output.loc[idx, 'confidence'], 2)
         crop = match_crop_name(name_parts[1]) # 고추
         disease = match_disease_name(name_parts[0]) # 고추탄저병
@@ -224,35 +223,13 @@ def add_result_list(result, crop_type):
         
         print(confidence)
         # 선택한 작물에 대한 병이 아닐 때 제외
-        if crop_type == crop:
-            crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "disease_url" : disease_url})  
+        # if crop_type == crop:
+        crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "disease_url" : disease_url})  
     if not crop_result:
         crop_result.append(None)
         
     return crop_result
 
-# 다시 판단할지 결정
-def check_re_model(result, crop_type):
-    
-    output = result.pandas().xyxy[0] # 결과 text데이터
-    
-    for idx in output.index:
-        name_parts = output.loc[idx, 'name'].split('_')
-        disease_code = (name_parts[0]) # 질병코드
-        
-        if crop_type == '토마토' and disease_code == 'b2':
-            return True
-                    
-    return False
-
-# 작물 따라서 다른 모델 적용
-def rerun_crop_model(crop_type, train_img, img_size):
-    if crop_type == '토마토':
-        return tomato_re_model(train_img, size = img_size)
-
-    return None
-
-   
 
 # 유효한 작물타입(영어)인지 확인
 def is_valid_crop_en(crop_type):
@@ -278,6 +255,7 @@ def is_exist_file(input_img):
 
 # 작물 따라서 다른 모델 적용
 def run_crop_model(crop_type, train_img, img_size):
+    print("모델의 type : ", crop_type)
     if crop_type == '토마토':
         return tomato_model(train_img, size = img_size)
     elif crop_type == '딸기':
@@ -328,10 +306,7 @@ class Predict(Resource):
         # 모델 실행
         train_img = input_dir + unique_name
         result = run_crop_model(crop_type, train_img, 416)
-        
-        if check_re_model(result, crop_type): 
-            result = rerun_crop_model(crop_type, train_img, 416)
-            
+     
         # 모델 결과 이미지
         result.print() 
         result.save(save_dir=output_dir,exist_ok=True)  
@@ -369,7 +344,6 @@ class Predict(Resource):
 if __name__ == "__main__":
      # 모델 옵션 적용
     set_model_option(tomato_model)
-    set_model_option(tomato_re_model)
     set_model_option(cucumber_model)
     set_model_option(pepper_model)
     set_model_option(strawberry_model)

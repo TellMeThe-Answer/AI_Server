@@ -11,7 +11,10 @@
 ./img/input/*.jpeg
 ./img/input/*.png
 ./img/input/*.jpg
+
 ./img/output/*jpeg
+./img/output/*.png
+./img/output/*.jpg
 runs/
 
 

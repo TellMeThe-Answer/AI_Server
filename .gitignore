@@ -9,6 +9,8 @@
 ./label/val_img
 
 ./img/input/*.jpeg
+./img/input/*.png
+./img/input/*.jpg
 ./img/output/*jpeg
 runs/
 

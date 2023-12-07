@@ -145,16 +145,16 @@ image_fail_response = predict_api.model('Predict Image 실패 응답', {
 })
 
 # 모델 로딩
-tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/final/strawberry-final-best.pt', source='local')
-strawberry_model = torch.hub.load('./yolov5', 'custom', path='./model/result/strawberry-all.pt', source='local')
-cucumber_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
+tomato_model = torch.hub.load('./yolov5', 'custom', path='./model/final/strawberry-finalmodel.pt', source='local')
+strawberry_model = torch.hub.load('./yolov5', 'custom', path='./model/final/strawberry-finalmodel.pt', source='local')
+cucumber_model = torch.hub.load('./yolov5', 'custom', path='./model/final/cucumber-finalmodel.pt', source='local')
 pepper_model = torch.hub.load('./yolov5', 'custom', path='./model/heonju_best.pt', source='local')
 
 
 # 모델 옵션
 def set_model_option(model):
     model.max_det = 4  # 객체 탐지 수
-    model.conf = 0.45  # 신뢰도 값
+    model.conf = 0.1  # 신뢰도 값
     model.multi_label = True   # 라벨링이 여러개가 가능하도록 할지
     model.iou = 0.45  # 0.4 ~ 0.5 값
 
@@ -191,7 +191,9 @@ def match_disease_risk_name(code):
 
 # 작물에 따른 방제정보 링크
 def match_crop_control_imformation(crop_name, disease_name):
-    if crop_name == '딸기':
+    if disease_name == None:
+        return None
+    elif crop_name == '딸기':
         return strawberry_url[disease_name] 
     elif crop_name == '오이':
         return cucumber_url[disease_name]
@@ -219,9 +221,12 @@ def add_result_list(result, crop_type):
         confidence = round(output.loc[idx, 'confidence'], 2)
         crop = match_crop_name(name_parts[1]) # 고추
         disease = match_disease_name(name_parts[0]) # 고추탄저병
+        print(confidence)
+        print(crop)
+        print(disease)
         disease_url = match_crop_control_imformation(crop_name=crop, disease_name=disease)
         
-        print(confidence)
+    
         # 선택한 작물에 대한 병이 아닐 때 제외
         # if crop_type == crop:
         crop_result.append({"crop" : crop, "disease" : disease, "percentage" : confidence, "disease_url" : disease_url})  
